@@ -8,6 +8,8 @@ from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
+# Javier Martinez Ojeda's code: https://github.com/JavierMtz5/ArtificialIntelligence
+# Blakeman and MAreschal's code: https://github.com/SamBlakeman/CTDL
 
 def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken):
     #get the number of steps taken for every path taken and put into an array
@@ -32,7 +34,7 @@ def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_
     print(lengths_of_paths[np.argmin(lengths_of_paths)])
 
 class DeepSOM(object):
-
+    #This class was taken from Blakeman and Mareschal
     def __init__(self,input_dim, map_size, learning_rate, sigma, sigma_const):
         self.SOM_layer = SOMLayer(input_dim, map_size, learning_rate, sigma, sigma_const)
         return
@@ -45,7 +47,7 @@ class DeepSOM(object):
         best_unit = self.SOM_layer.GetBestUnit(state)
         return best_unit
 class SOMLayer():
-
+    #This class was taken from Blakeman and Mareschal
     def __init__(self, input_dim, size, learning_rate, sigma, sigma_const):
         self.size = size
         self.num_units = size * size
@@ -129,6 +131,7 @@ class CTDLAgent:
         self.CreateSOM( self.som_size,self.som_alpha, self.som_sigma, self.som_sigma_const) #took away som_size and replaced with batch size
 
     def CreateSOM(self, som_size,som_alpha, som_sigma, som_sigma_const):
+        #This method was taken from Blakeman and Mareschal's code
 
         self.SOM = DeepSOM(self.input_dim, som_size,
                            som_alpha, som_sigma,
@@ -138,11 +141,13 @@ class CTDLAgent:
         return
 
     def GetWeighting(self, best_unit, state):
+        #This method was taken from Blakeman and Mareschal's code
         diff = np.sum(np.square(self.SOM.SOM_layer.units['w'][best_unit] - state))
         w = np.exp(-diff / self.weighting_decay)
         return w
     
     def create_nn(self):
+        #This method was taken from Javier MArtinez Ojeda's code
         model = Sequential()
 
         model.add(Dense(32, activation='relu', input_dim=self.state_size))
@@ -153,13 +158,17 @@ class CTDLAgent:
         return model
 
     def update_target_network(self):
+         #This method was taken from Javier MArtinez Ojeda's code
         """Method to set the Main NN's weights on the Target NN"""
         self.target_network.set_weights(self.main_network.get_weights())
 
     def save_experience(self, state, action, reward, next_state, terminal):
+         #This method was taken from Javier MArtinez Ojeda's code
         self.replay_buffer.append((state, action, reward, next_state, terminal))
 
     def sample_experience_batch(self, batch_size):
+        #This method was taken from Javier MArtinez Ojeda's code
+        #This method was taken from Javier Martinez Ojeda's code
         # Sample {batchsize} experiences from the Replay Buffer
         exp_batch = random.sample(self.replay_buffer, batch_size)
 
@@ -174,6 +183,7 @@ class CTDLAgent:
         return state_batch, action_batch, reward_batch, next_state_batch, terminal_batch
 
     def get_q_values(self, input):
+        #This method was taken from Blakeman and Mareschal's code
         q_values_DNN = self.main_network.predict(input, verbose=0)
         q_values = np.zeros((len(q_values_DNN),self.action_size))
         count = 0
@@ -187,7 +197,7 @@ class CTDLAgent:
         return q_values
 
     def pick_epsilon_greedy_action(self, state):
-
+        #This method was taken from JAvier MArtinez Ojeda's code
         # Pick random action with probability ε
         if random.uniform(0, 1) < self.epsilon:
             return np.random.randint(self.action_size)
@@ -198,7 +208,7 @@ class CTDLAgent:
         return np.argmax(q_values[0])
 
     def train(self, batch_size):
-
+        #This method was taken from Javier Martinez Ojeda's code
         # Sample a batch of experiences
         state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch(batch_size)
 
@@ -216,6 +226,7 @@ class CTDLAgent:
         self.main_network.fit(state_batch, q_values, verbose=0)
 
     def UpdateSOM(self,target):
+        #This method was taken from Blakeman and Mareschal's code
         prev_best_unit = self.SOM.GetOutput(self.prev_state)
         state = self.prev_state.reshape((1, self.state_size))
         q_values = self.main_network.predict(state, verbose=0)
@@ -232,7 +243,7 @@ class CTDLAgent:
         return
 
     def GetTargetValue(self, bTrial_over, reward, state):
-
+        #This method was taken from Blakeman and Mareschal's code
         state = state.reshape((1, self.state_size))
         q_values = self.get_q_values(state)
         max_q_value = np.amax(q_values)
