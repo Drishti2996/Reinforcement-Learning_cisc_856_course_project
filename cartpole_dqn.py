@@ -1,4 +1,3 @@
-import json
 import random
 import time
 from collections import deque
@@ -9,7 +8,6 @@ from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
-from matplotlib import animation, colors
 
 def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken ):
     #get the number of steps taken for every path taken and put into an array
@@ -188,6 +186,7 @@ if __name__ == '__main__':
         episodes_num.append(ep)
         time_step_episode.append(time_step)
         paths_taken.append(path_taken)
+
     #Print the details
     print_out_everything(rewards,time_step_episode, episodes_num, paths_taken )
     

@@ -3,7 +3,7 @@ import numpy as np
 import random
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.optimizers import RMSprop
 import matplotlib.pyplot as plt
 from numpy.ma.core import ceil
 from scipy.spatial import distance #distance calculation
@@ -26,14 +26,6 @@ Y_START =  4 #random.randint(0, Y_LEN - 1)
 #Location of the goal state
 X_GOAL = 5 #random.randint(0, X_LEN - 1)
 Y_GOAL = 9 #random.randint(0, Y_LEN - 1)
-
-
-def find_convergence(paths, smallest_path):
-  #Find where the algorithm converges
-  old_len = paths[-1]
-  for j in reversed(paths):
-    if old_len != j:
-      return np.where(paths == j)[-1]
 
 def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken ):
     #get the number of steps taken for every path taken and put into an array
@@ -90,55 +82,12 @@ def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_
     print("Means of entire rewards per episode: ")
     print(np.mean(episode_rewards))
 
-def print_path(path_taken):
-    #print out a graph of the best path taken  - best policy
-    col = np.zeros(len(path_taken))
-    row = np.zeros(len(path_taken))
-    for i in range(len(path_taken)):
-      row[i] = path_taken[i][0]
-      col[i] = path_taken[i][1]
-    plt.plot(col, row)
-    plt.ylabel('Rows')
-    plt.xlabel('Columns')
-    plt.gca().set_xlim([-1, X_LEN])
-    plt.gca().set_ylim([-1, Y_LEN])
-    plt.plot(X_START, Y_START, 'ro', label='Start')
-    plt.plot(X_GOAL, Y_GOAL, 'go', label='Goal')
-    plt.gca().invert_yaxis()
-    plt.title('The path taken - the policy')
-    plt.legend()
-    plt.show()
-
-    # to print the entire path taken of the grid world
-def print_grid(q):
-  upq = np.zeros((Y_LEN, X_LEN))
-  downq = np.zeros((Y_LEN, X_LEN))
-  leftq = np.zeros((Y_LEN, X_LEN))
-  rightq = np.zeros((Y_LEN, X_LEN))
-  for i in range(X_LEN):
-    for j in range(Y_LEN):
-      upq[j,i] = q[j,i,0]
-      downq[j,i] = q[j,i,2]
-      leftq[j,i] = q[j,i,3]
-      rightq[j,i] = q[j,i,1]
-
-  print("up q")
-  print(upq)
-  print("top (0,0)")
-  print(upq[0,0])
-  print("down q")
-  print(downq)
-  print("left q")
-  print(leftq)
-  print("right q")
-  print(rightq)
-
 class GridWorld:
   # Setting up the grid world
     def __init__(self):
         # Set the starting location, the current location and goal location at 0,0
-        self.start_state = (Y_START,X_START)
-        self.goal_state = (Y_GOAL,X_GOAL)
+        self.start_state = Y_START,X_START
+        self.goal_state = Y_GOAL,X_GOAL
         #Possible positions
         self.action = ['up','right','down','left']
         #size of the grid
@@ -153,8 +102,7 @@ class GridWorld:
         self.X_GOAL = X_GOAL
         self.Y_GOAL = Y_GOAL
 
-        self.grid = np.zeros(( self.Y_LEN, self.X_LEN)) 
-  
+        self.grid = np.zeros((self.Y_LEN, self.X_LEN))
 
     def go_to_next_loc(self, action, current_state):
       #This calculates the next location with one wind vector and four actions
@@ -162,14 +110,14 @@ class GridWorld:
       row = current_state[0]
       col = current_state[1]
       if action == 'up':
-        new_state = (max(row - 1, 0), col)
+        new_state = max(row - 1, 0), col
       elif action == 'right':
-        new_state = (row,min(col + 1, self.X_LEN -1)) 
+        new_state = row,min(col + 1, self.X_LEN -1)
       elif action == 'down':
-        new_state = (min(row + 1, self.Y_LEN - 1),col)
+        new_state = min(row + 1, self.Y_LEN - 1),col
       else:
-        new_state = (row, max(col - 1,0))
-      self.grid = np.zeros(( self.Y_LEN, self.X_LEN))
+        new_state = row, max(col - 1,0)
+      self.grid = np.zeros((self.Y_LEN, self.X_LEN))
       self.grid[new_state[0], new_state[1]] = 1
       return new_state
 
@@ -179,7 +127,6 @@ class GridWorld:
         return -1 
       else:
         return 1
-
 
 #Set Hyperparameters
 EPSILON = 1
@@ -206,7 +153,7 @@ class DQN:
         self.epsilon = EPSILON
         self.gamma = GAMMA
         self.alpha = ALPHA
-        self.q = np.zeros((Y_LEN, X_LEN, NUM_ACTIONS))#
+        self.q = np.zeros((Y_LEN, X_LEN, NUM_ACTIONS))
         self.batch_size = BATCH_SIZE
 
         #initalize environement
@@ -314,11 +261,10 @@ class DQN:
             ca = np.random.randint(self.action_size)
             return ca
         else:
-          state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
+          state_batch, _, _, _, _ = self.sample_experience_batch()
           state_batch[0] = state
           q_values = self.main_network.predict(state_batch, verbose=0)
           return np.argmax(q_values[0])
-
 
     def train(self):
         # Sample a batch of experiences
@@ -357,27 +303,7 @@ class DQN:
             location_x = j 
             location_y = i
           count += 1
-      return (location_y,location_x)
-
-    def update_main_network(self, reward, state, bTrial_over):
-        state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
-        max_action_values = np.zeros((self.batch_size))
-        state_batch[0] = state
-        for i in range(len(state_batch)):  
-          maximum = 0.0
-          q_values = self.main_network.predict(state_batch, verbose=0)
-          max_action_values[i]  = np.argmax(q_values[i])
-        
-        targets = np.zeros(reward_batch.__len__())
-
-        for i in range(targets.shape[0]):
-            if(terminal_batch[i]):
-                targets[i] = reward_batch[i]
-            else:
-                targets[i] = reward_batch[i] + (max_action_values[i] * self.discount_factor)
-
-
-
+      return location_y,location_x
 
     def run_gridworld(self):
         #initialize the way to store the rewards
@@ -404,7 +330,7 @@ class DQN:
             if time_steps % self.update_rate == 0:
                 self.update_target_network()
             #choose the action
-            chosen_action = self.pick_epsilon_greedy_action(current_state)#np.asarray(current_state))
+            chosen_action = self.pick_epsilon_greedy_action(current_state)
             #Take action A and observe the reqard and the state
             next_state = self.convert_state(self.grid.go_to_next_loc(chosen_action, self.convert_state_back(current_state)))
             #Choose action A ( the next location to move to) using greedy
@@ -456,10 +382,10 @@ class SOM(object):
         return best_unit
 
     def PlotResults(self, plot_num):
-        self.PlotMap(plot_num)
-        self.PlotLocations(plot_num)
+        self.PlotMap()
+        self.PlotLocations()
 
-    def PlotMap(self, plot_num):
+    def PlotMap(self):
         width = np.unique(self.SOM_layer.units['xy']).shape[0]
         height = width
         im_grid = np.zeros((width, height, 3))
@@ -472,7 +398,7 @@ class SOM(object):
         plt.imshow(im_grid)
         plt.close()
 
-    def PlotLocations(self, plot_num):
+    def PlotLocations(self):
         im_grid = np.zeros((self.maze_height, self.maze_width))
 
         for i in range(self.SOM_layer.num_units):
@@ -542,7 +468,7 @@ class CTDL:
         self.epsilon = EPSILON
         self.gamma = GAMMA
         self.alpha = ALPHA
-        self.q = np.zeros((Y_LEN, X_LEN, NUM_ACTIONS))#
+        self.q = np.zeros((Y_LEN, X_LEN, NUM_ACTIONS))
 
         self.batch_size = BATCH_SIZE
 
@@ -585,9 +511,9 @@ class CTDL:
         self.list_bTrial_over = []
 
         #SOM
-        self.som = self.createSOM( self.som_size,self.som_alpha, self.som_sigma, self.som_sigma_const) #took away som_size and replaced with batch size
+        self.som = self.createSOM(self.som_alpha, self.som_sigma, self.som_sigma_const) #took away som_size and replaced with batch size
 
-    def createSOM(self,  batch_size, som_alpha, som_sigma, som_sigma_const):
+    def createSOM(self, som_alpha, som_sigma, som_sigma_const):
         self.SOM = SOM( self.grid.X_LEN, self.grid.Y_LEN, 2, self.som_size,
                        som_alpha, som_sigma,
                        som_sigma_const)
@@ -601,7 +527,7 @@ class CTDL:
         model.add(Dense(128, activation='relu'))
         model.add(Dense(self.action_size, activation='linear'))
 
-        model.compile(loss='mse', optimizer=RMSprop(learning_rate=LEARNING_RATE_RMSprop,momentum=MOMENTUM,epsilon=.001)) #try with adam
+        model.compile(loss='mse', optimizer=RMSprop(learning_rate=LEARNING_RATE_RMSprop,momentum=MOMENTUM,epsilon=.001))
 
         return model
 
@@ -618,7 +544,7 @@ class CTDL:
         self.list_bTrial_over.append(bTrial_over)
         self.list_actions.append(action)
 
-        if(self.list_rewards.__len__() > self.capacity):
+        if self.list_rewards.__len__() > self.capacity:
             del self.list_prev_states[0]
             del self.list_states[0]
             del self.list_actions[0]
@@ -647,7 +573,7 @@ class CTDL:
         return state_batch, action_batch, reward_batch, next_state_batch, terminal_batch
 
     def reshape_state(self,location):
-      mat = np.zeros((100))
+      mat = np.zeros(100)
       count = -1
       for i in range(Y_LEN):
         for j in range(X_LEN):
@@ -668,18 +594,15 @@ class CTDL:
         q_vals = ((w * som_action_values) + ((1 - w) * q_values_DNN[count]))
         q_values[count,:] = q_vals
         count += 1
-      q_values_two = ((w * som_action_values) + ((1 - w) * q_values_DNN))
-
       return q_values
 
     def pick_epsilon_greedy_action(self,state):
         # Pick random action with probability ε
-        curr_loc = self.convert_state_back(state)
         if random.uniform(0, 1) < self.epsilon: 
             ca = np.random.randint(self.action_size)
             return ca
         else:
-          state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
+          state_batch, _, _, _, _ = self.sample_experience_batch()
           state_batch[0] = state
           q_values = self.get_q_values(state_batch)
           return np.argmax(q_values[0])
@@ -710,6 +633,7 @@ class CTDL:
             state = count
           count += 1
       return state
+    
     def convert_state_back(self,state):
       state_idx = 0
       location_x = 0
@@ -721,11 +645,11 @@ class CTDL:
             location_x = j 
             location_y = i
           count += 1
-      return (location_y,location_x)
+      return location_y,location_x
 
     def UpdateSOM(self, target,prev_state,prev_action):
         prev_best_unit = self.SOM.GetOutput(prev_state)
-        state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
+        state_batch, _, _, _, _ = self.sample_experience_batch()
         state_batch[0] = prev_state
         action = self.main_network.predict(state_batch, verbose=0)
         delta = np.exp(np.abs(target -
@@ -739,16 +663,15 @@ class CTDL:
         self.QValues[prev_best_unit, prev_action] += self.Q_alpha * w * (target - self.QValues[prev_best_unit, prev_action])
         self.SOM.RecordLocationCounts()
         self.train()
-
         return
 
     def GetTargetValue(self, bTrial_over, reward, state):
-        state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
+        state_batch, _, _, _, _ = self.sample_experience_batch()
         state_batch[0] = state
         qvalues = self.get_q_values(state_batch) 
         q_values = qvalues[0]
         max_q_value = np.amax(q_values)
-        if (bTrial_over):
+        if bTrial_over:
             target = reward
         else:
             target = reward + (max_q_value * self.discount_factor)
@@ -768,7 +691,7 @@ class CTDL:
         time_steps = 0
         episodes_num = []
         time_step_episode = []
-        for episode in range (EPISODES):
+        for episode in range(EPISODES):
           accum_rewards = 0
           notEndReached = True
           path_taken = []
@@ -821,8 +744,7 @@ class CTDL:
           episode_rewards[episode] = accum_rewards
           paths_taken.append(path_taken)
         #Print the details
-        print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken )
-
+        print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken)
 
 #dnn=DQN()
 #dnn.run_gridworld()

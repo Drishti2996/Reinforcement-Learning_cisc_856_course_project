@@ -1,4 +1,3 @@
-import json
 import random
 import time
 from collections import deque
@@ -9,9 +8,8 @@ from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
-from matplotlib import animation, colors
 
-def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken ):
+def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken):
     #get the number of steps taken for every path taken and put into an array
     lengths_of_paths = np.zeros(len(paths_taken))
     for k in range(len(paths_taken)):
@@ -66,12 +64,12 @@ class SOMLayer():
         y = 0
 
         # Construct map
-        for u in range(self.num_units):
+        for _ in range(self.num_units):
             self.units['xy'].append([x, y])
             self.units['w'].append(np.random.rand(self.num_weights))
             x += 1
 
-            if (x >= self.size):
+            if x >= self.size:
                 x = 0
                 y += 1
 
@@ -94,7 +92,7 @@ class SOMLayer():
     def GetBestUnit(self, state):
 
         best_unit = np.argmin(np.sum((self.units['w'] - state) ** 2, axis=-1), axis=0)
-        return 
+        return best_unit
 
 class CTDLAgent:
     def __init__(self, state_size, action_size):
@@ -118,7 +116,7 @@ class CTDLAgent:
         self.weighting_decay = 10
         self.som_size = 15
         self.som_alpha = 0.1
-        self.som_sigma = .1
+        self.som_sigma = .06
         self.som_sigma_const = .1
         self.input_dim = state_size
 
@@ -128,11 +126,11 @@ class CTDLAgent:
 
         # Initialize Target Network with Main Network's weights
         self.target_network.set_weights(self.main_network.get_weights())
-        self.CreateSOM( self.som_size,self.som_alpha, self.som_sigma, self.som_sigma_const  ) #took away som_size and replaced with batch size
+        self.CreateSOM( self.som_size,self.som_alpha, self.som_sigma, self.som_sigma_const) #took away som_size and replaced with batch size
 
-    def CreateSOM(self, som_size,som_alpha, som_sigma, som_sigma_const ):
+    def CreateSOM(self, som_size,som_alpha, som_sigma, som_sigma_const):
 
-        self.SOM = DeepSOM( self.input_dim, som_size,
+        self.SOM = DeepSOM(self.input_dim, som_size,
                            som_alpha, som_sigma,
                            som_sigma_const)
         self.Q_alpha = som_alpha
@@ -140,8 +138,7 @@ class CTDLAgent:
         return
 
     def GetWeighting(self, best_unit, state):
-
-        diff = np.sum(np.square(self.SOM.SOM_layer.units['w'][best_unit, :] - state))
+        diff = np.sum(np.square(self.SOM.SOM_layer.units['w'][best_unit] - state))
         w = np.exp(-diff / self.weighting_decay)
         return w
     
@@ -184,7 +181,7 @@ class CTDLAgent:
             best_unit = self.SOM.GetOutput(state)
             som_action_values = self.QValues[best_unit, :]
             w = self.GetWeighting(best_unit, state)
-            q_vals = (w * som_action_values[0][0]) + ((1 - w) * q_values_DNN[0])
+            q_vals = (w * som_action_values[0]) + ((1 - w) * q_values_DNN[0])
             q_values[count,:] = q_vals
             count += 1
         return q_values
@@ -217,6 +214,7 @@ class CTDLAgent:
 
         # Fit the Neural Network
         self.main_network.fit(state_batch, q_values, verbose=0)
+
     def UpdateSOM(self,target):
         prev_best_unit = self.SOM.GetOutput(self.prev_state)
         state = self.prev_state.reshape((1, self.state_size))
@@ -238,7 +236,7 @@ class CTDLAgent:
         state = state.reshape((1, self.state_size))
         q_values = self.get_q_values(state)
         max_q_value = np.amax(q_values)
-        if (bTrial_over):
+        if bTrial_over:
             target = reward
         else:
             target = reward + (max_q_value * self.discount_factor)
@@ -316,5 +314,6 @@ if __name__ == '__main__':
         episodes_num.append(ep)
         time_step_episode.append(time_step)
         paths_taken.append(path_taken)
+
     #Print the details
-    print_out_everything(rewards,time_step_episode, episodes_num, paths_taken )
+    print_out_everything(rewards,time_step_episode, episodes_num, paths_taken)
