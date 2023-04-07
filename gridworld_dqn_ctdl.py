@@ -15,17 +15,19 @@ import matplotlib.pyplot as plt
 from matplotlib import animation, colors
 from subprocess import run
 import sys
+# Javier Martinez Ojeda's code: https://github.com/JavierMtz5/ArtificialIntelligence
+# Blakeman and MAreschal's code: https://github.com/SamBlakeman/CTDL
 #size of the grid
 X_LEN = 10
 Y_LEN = 10
 
 #Location of the start state
-X_START =  8 #random.randint(0, X_LEN - 1)
-Y_START =  4 #random.randint(0, Y_LEN - 1)
+X_START =  random.randint(0, X_LEN - 1)
+Y_START =  random.randint(0, Y_LEN - 1)
 
 #Location of the goal state
-X_GOAL = 5 #random.randint(0, X_LEN - 1)
-Y_GOAL = 9 #random.randint(0, Y_LEN - 1)
+X_GOAL = random.randint(0, X_LEN - 1)
+Y_GOAL = random.randint(0, Y_LEN - 1)
 
 def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken ):
     #get the number of steps taken for every path taken and put into an array
@@ -188,6 +190,7 @@ class DQN:
         self.list_bTrial_over = []
 
     def create_nn(self,states):
+        #This function was taken from Javier Martinez Ojeda's code
         # create DNN network for DQN with epsilon = 0.001
         model = Sequential()
 
@@ -200,12 +203,13 @@ class DQN:
         return model
 
     def update_target_network(self):
+        #This function was modified from Javier Martinez Ojeda's code
         """Method to set the Main NN's weights on the Target NN"""
         self.target_network.set_weights(self.main_network.get_weights())
 
     #memory
     def save_experience(self,prev_state, action, reward, state, bTrial_over): #prev state is state and next state is now state
-
+        #This function was taken from Blakeman and Mareschal's code
         self.list_prev_states.append(prev_state)
         self.list_states.append(state)
         self.list_rewards.append(reward)
@@ -220,6 +224,7 @@ class DQN:
             del self.list_bTrial_over[0]
 
     def sample_experience_batch(self):
+        #This function was taken from Blakeman and Mareschal's code
         experience_indices = np.random.randint(0, self.list_rewards.__len__(), self.batch_size)
         prev_states = []
         actions = []
@@ -255,6 +260,7 @@ class DQN:
             new_state[i] = state
 
     def pick_epsilon_greedy_action(self,state):
+        #This function was modified from Javier Martinez Ojeda's code
         # Pick random action with probability ε
         curr_loc = self.convert_state_back(state)
         if random.uniform(0, 1) < self.epsilon: 
@@ -267,6 +273,7 @@ class DQN:
           return np.argmax(q_values[0])
 
     def train(self):
+        #This function was modified from Javier Martinez Ojeda's code
         # Sample a batch of experiences
         state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
 
@@ -367,7 +374,7 @@ class DQN:
 
 # SOM for Gridworld environment
 class SOM(object):
-
+    #This class was taken from Blakeman and Mareschal's code
     def __init__(self,  maze_width, maze_height, input_dim, map_size, learning_rate, sigma, sigma_const):
         self.maze_width = maze_width
         self.maze_height = maze_height
@@ -417,6 +424,7 @@ class SOM(object):
             self.location_counts[y, x] += 1
 
 class SOMLayer:
+  #This class was taken form Blakeman and Mareschal's code
   def __init__(self, grid_dim, input_dim, size, learning_rate, sigma, sigma_const):
       self.size = size
       self.num_units = size * size
@@ -473,8 +481,8 @@ class CTDL:
         self.batch_size = BATCH_SIZE
 
         self.weighting_decay = 10
-        self.som_size = 8 
-        self.som_alpha = 0.01
+        self.som_size = 6
+        self.som_alpha = 0.1
         self.som_sigma = .1 
         self.som_sigma_const = .1
 
@@ -514,14 +522,16 @@ class CTDL:
         self.som = self.createSOM(self.som_alpha, self.som_sigma, self.som_sigma_const) #took away som_size and replaced with batch size
 
     def createSOM(self, som_alpha, som_sigma, som_sigma_const):
+        #This method was taken from Blakeman and Mareschal's code
         self.SOM = SOM( self.grid.X_LEN, self.grid.Y_LEN, 2, self.som_size,
                        som_alpha, som_sigma,
                        som_sigma_const)
-        self.Q_alpha = .9
+        self.Q_alpha = self.som_alpha
         self.QValues = np.zeros((self.som_size * self.som_size, NUM_ACTIONS))
 
 
     def create_nn(self,states):
+        #This method was taken from Javier Martinez Ojeda's code
         model = Sequential()
         model.add(Dense(128, activation='relu', input_dim=self.state_size))
         model.add(Dense(128, activation='relu'))
@@ -532,12 +542,13 @@ class CTDL:
         return model
 
     def update_target_network(self):
+        #This method was taken from Javier Martinez Ojeda's code
         """Method to set the Main NN's weights on the Target NN"""
         self.target_network.set_weights(self.main_network.get_weights())
 
     #memory
     def save_experience(self,prev_state, action, reward, state, bTrial_over): #prev state is state and next state is now state
-
+        #This method was taken from Blakeman and Mareschal's code
         self.list_prev_states.append(prev_state)
         self.list_states.append(state)
         self.list_rewards.append(reward)
@@ -552,6 +563,7 @@ class CTDL:
             del self.list_bTrial_over[0]
 
     def sample_experience_batch(self):
+        #This method was taken from Blakeman and Mareschal's code
         experience_indices = np.random.randint(0, self.list_rewards.__len__(), self.batch_size)
         prev_states = []
         actions = []
@@ -584,6 +596,7 @@ class CTDL:
       return mat
 
     def get_q_values(self, input):
+        #This method was taken from Blakeman and Mareschal's code
       q_values_DNN = self.main_network.predict(input, verbose=0)
       q_values = np.zeros((len(q_values_DNN),4))
       count = 0
@@ -597,6 +610,7 @@ class CTDL:
       return q_values
 
     def pick_epsilon_greedy_action(self,state):
+        #This method was taken from Javier Martinez Ojeda's code
         # Pick random action with probability ε
         if random.uniform(0, 1) < self.epsilon: 
             ca = np.random.randint(self.action_size)
@@ -608,6 +622,7 @@ class CTDL:
           return np.argmax(q_values[0])
 
     def train(self):
+        #This method was modified from Javier Martinez Ojeda's code
         # Sample a batch of experiencesh
         state_batch, action_batch, reward_batch, next_state_batch, terminal_batch = self.sample_experience_batch()
 
@@ -648,6 +663,7 @@ class CTDL:
       return location_y,location_x
 
     def UpdateSOM(self, target,prev_state,prev_action):
+        #This method was taken from Blakeman and Mareschal's code
         prev_best_unit = self.SOM.GetOutput(prev_state)
         state_batch, _, _, _, _ = self.sample_experience_batch()
         state_batch[0] = prev_state
@@ -666,6 +682,7 @@ class CTDL:
         return
 
     def GetTargetValue(self, bTrial_over, reward, state):
+        #This method was taken from Blakeman and Mareschal's code
         state_batch, _, _, _, _ = self.sample_experience_batch()
         state_batch[0] = state
         qvalues = self.get_q_values(state_batch) 
@@ -678,7 +695,7 @@ class CTDL:
         return target
 
     def GetWeighting(self, best_unit, state):
-
+        #This method was taken from Blakeman and Mareschal's code
         diff = np.sum(np.square(self.SOM.SOM_layer.units['w'][best_unit, :] - state))
         w = np.exp(-diff / self.weighting_decay)
 
