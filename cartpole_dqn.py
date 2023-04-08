@@ -1,11 +1,3 @@
-# ***************************************************************************************/
-# *    Title: CTDL source code
-# *    Author:Sam Blakeman, Denis Mareschal
-# *    Date: 2020
-# *    Availability:https://github.com/SamBlakeman/CTDL.git
-# *
-# ***************************************************************************************/
-
 import random
 import time
 from collections import deque
