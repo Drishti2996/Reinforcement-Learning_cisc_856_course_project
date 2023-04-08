@@ -16,6 +16,8 @@ from keras.layers import Dense
 from keras.models import Sequential
 from keras.optimizers import Adam
 import matplotlib.pyplot as plt
+# Javier Martinez Ojeda's code: https://github.com/JavierMtz5/ArtificialIntelligence
+# Blakeman and MAreschal's code: https://github.com/SamBlakeman/CTDL
 
 def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_taken ):
     #get the number of steps taken for every path taken and put into an array
@@ -40,6 +42,7 @@ def print_out_everything(episode_rewards,time_step_episode, episodes_num, paths_
     print(lengths_of_paths[np.argmin(lengths_of_paths)])
   
 class DQNAgent:
+    #This class was taken from JAvier Martinez Ojeda's code
     def __init__(self, state_size, action_size):
 
         self.state_size = state_size
@@ -126,6 +129,7 @@ class DQNAgent:
 
 
 if __name__ == '__main__':
+    #This main function was taken from Javier Martinez Ojeda's code
 
     # Initialize CartPole environment
     env = gym.make("CartPole-v1")
