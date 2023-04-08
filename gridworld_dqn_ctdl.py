@@ -1,3 +1,4 @@
+
 from collections import deque
 import numpy as np
 import random
@@ -305,6 +306,7 @@ class DQN:
           count += 1
       return location_y,location_x
 
+#This code was implemented by us
     def run_gridworld(self):
         #initialize the way to store the rewards
         episode_rewards = np.zeros(EPISODES)
@@ -684,6 +686,7 @@ class CTDL:
 
         return w
 
+#This code was implemented by us
     def run_gridworld(self):
         #initialize the way to store the rewards
         episode_rewards = np.zeros(EPISODES)
@@ -751,3 +754,4 @@ class CTDL:
 
 ctdl=CTDL()
 ctdl.run_gridworld()
+
